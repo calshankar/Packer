@@ -1,0 +1,61 @@
+{
+    "variables": {
+        "aws_access_key_id": "{{env `AWS_ACCESS_KEY_ID`}}",
+        "aws_secret_access_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+        "aws_session_token": "{{env `AWS_SESSION_TOKEN`}}",
+        "time_zone": "{{env `TIME_ZONE`}}"
+    },
+    "builders": [
+        {
+            "type": "amazon-ebs",
+            "access_key": "",
+            "secret_key": "",
+            "token": "",
+            "region": "us-east-1",
+            "source_ami": "ami-fad25980",
+            "instance_type": "t2.micro",
+            "ssh_username": "ec2-user",
+            "associate_public_ip_address": "true",
+            "ami_name": "docker-prod-ecs-base {{timestamp}}",
+            "tags": {
+                "Name": "Docker Prod base image",
+                "SourceAMI": "ami-fad25980",
+                "DockerVersion": "17.06.2",
+                "ECSAgentVersion": "1.15.2"
+            }
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "script": "scripts/configure-timezone.sh",
+            "environment_vars": [
+                "TIME_ZONE={{user `time_zone`}}"
+            ]            
+        },
+        {
+            "type": "file",
+            "source": "scripts/initRun.sh",
+            "destination": "/home/ec2-user/initrun.sh"
+        },
+        {
+            "type": "shell",
+            "script": "scripts/os-package.sh"
+        },
+        {
+            "type": "shell",
+            "script": "scripts/cloud-init-option.sh"
+        },
+        {
+            "type": "shell",
+            "script": "scripts/janitor.sh"
+        }
+    ],
+    "post-processors": [
+        {
+            "type": "manifest",
+            "output": "manifest.json",
+            "strip_path": true
+        }
+    ]
+}
